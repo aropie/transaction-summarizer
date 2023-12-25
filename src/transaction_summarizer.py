@@ -19,29 +19,27 @@ class TransactionSummarizer:
         self.db = db_api or DbAPI()
 
     def get_transactions_by_year_month(self) -> Any:
-        """Returns a dictionary with the transactions sorted by year and month.
+        """Returns a dictionary with the number of transactions sorted by year and month.
         For example:
         {
           2022: {
-              7: [Transaction, Transaction]
-              8: [Transaction]
+              7: 3
+              8: 10
           },
           2023: {
-              12: [Transaction, Transaction, Transaction]
+              12: 5
           }
         }
 
-        :returns: A dictionary with transactions sorted by year and month
+        :returns: A dictionary with the number transactions sorted by year and month
 
         """
 
         with self.db.session_local() as session:
             transactions = session.scalars(select(Transaction)).all()
-            parsed_transactions = defaultdict(lambda: defaultdict(list))
+            parsed_transactions = defaultdict(lambda: defaultdict(int))
             for transaction in transactions:
-                parsed_transactions[transaction.date.year][
-                    transaction.date.month
-                ].append(transaction)
+                parsed_transactions[transaction.date.year][transaction.date.month] += 1
             return parsed_transactions
 
     def get_total_balance(self) -> float:
