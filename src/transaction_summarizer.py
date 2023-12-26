@@ -14,8 +14,8 @@ from src.models import Transaction
 class TransactionSummarizer:
     """Class for giving information on the Transactions stored on the DB.
 
-    A TransactionSummarizer object will perform queries on the DB to return
-    averages and balances.
+    A TransactionSummarizer object will perform queries on the DB to
+    return averages and balances.
     """
 
     def __init__(self, db_api: Optional[DbAPI] = None):
