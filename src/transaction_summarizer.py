@@ -2,9 +2,12 @@
 from collections import defaultdict
 from typing import Any, Optional
 
+from html2text import html2text
 from sqlalchemy import func, select
 
+from src.config import settings
 from src.db.db import DbAPI
+from src.email_gateway import EmailGateway
 from src.models import Transaction
 
 
@@ -16,6 +19,7 @@ class TransactionSummarizer:
     """
 
     def __init__(self, db_api: Optional[DbAPI] = None):
+        self.email_gateway = EmailGateway()
         self.db = db_api or DbAPI()
 
     def get_transactions_by_year_month(self) -> Any:
@@ -83,3 +87,21 @@ class TransactionSummarizer:
                 or 0  # if there are no transactions with value > 0, then return 0 as the avg
             )
             return average_credit
+
+    def send_summary_email(self) -> None:
+        """Sends an email with a summary of the transactions stored in DB.
+
+        :returns: None
+
+        """
+
+        # Importing here to avoid circular imports
+        from src.email_composer import EmailComposer
+
+        email_composer = EmailComposer()
+        html = email_composer.compose_html_summary()
+        text = html2text(html)
+
+        self.email_gateway.send_email(
+            settings.target_email, settings.email_subject, text, html
+        )
