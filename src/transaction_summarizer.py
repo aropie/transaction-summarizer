@@ -5,7 +5,6 @@ from typing import Any, Optional
 from html2text import html2text
 from sqlalchemy import func, select
 
-from src.config import settings
 from src.db.db import DbAPI
 from src.email_gateway import EmailGateway
 from src.models import Transaction
@@ -88,7 +87,7 @@ class TransactionSummarizer:
             )
             return average_credit
 
-    def send_summary_email(self) -> None:
+    def send_summary_email(self, to, email_subject) -> None:
         """Sends an email with a summary of the transactions stored in DB.
 
         :returns: None
@@ -102,6 +101,4 @@ class TransactionSummarizer:
         html = email_composer.compose_html_summary()
         text = html2text(html)
 
-        self.email_gateway.send_email(
-            settings.target_email, settings.email_subject, text, html
-        )
+        self.email_gateway.send_email(to, email_subject, text, html)
