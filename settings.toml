@@ -1,0 +1,13 @@
+[default]
+db_dialect = "postgresql"
+db_user = ""
+db_password = ""
+db_host = "localhost"
+db_port = 5432
+db_name = "transactions_db"
+smtp_server = "smtp.gmail.com"
+smtp_port = 465
+sender_email_address = ""
+sender_email_password = ""
+email_subject = "Your automated transactions summary"
+target_email = ""

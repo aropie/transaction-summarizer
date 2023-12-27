@@ -9,7 +9,7 @@ resource "null_resource" "pip_install" {
   }
 
   provisioner "local-exec" {
-    command = "python3 -m pip install -r ../requirements.txt -t ${path.module}/lambda/layer/python"
+    command = "python3 -m pip install -r ../requirements.txt -t ${path.module}/lambda/layer/python --upgrade"
   }
 }
 
@@ -93,7 +93,7 @@ resource "aws_iam_role_policy_attachment" "lambda_role_policy" {
 resource "aws_lambda_function" "lambda" {
   function_name    = "transaction-summarizer"
   handler          = "src.app.handle"
-  runtime          = "python3.9"
+  runtime          = "python3.11"
   filename         = data.archive_file.code.output_path
   source_code_hash = data.archive_file.code.output_base64sha256
   role             = aws_iam_role.lambda_role.arn
@@ -104,71 +104,6 @@ resource "aws_lambda_function" "lambda" {
     }
   }
 }
-
-
-
-
-
-# Config for S3 Bucket
-# resource "aws_s3_bucket" "transactions-store" {
-#   bucket        = "transactions-store"
-#   force_destroy = true
-# }
-
-# resource "aws_s3_bucket_ownership_controls" "bucket-ownership" {
-#   bucket = aws_s3_bucket.transactions-store.id
-
-#   rule {
-#     object_ownership = "BucketOwnerPreferred"
-#   }
-# }
-
-# resource "aws_s3_bucket_public_access_block" "access-block" {
-#   bucket = aws_s3_bucket.transactions-store.id
-
-#   block_public_acls       = false
-#   block_public_policy     = false
-#   ignore_public_acls      = false
-#   restrict_public_buckets = false
-# }
-
-# resource "aws_s3_bucket_acl" "bucket-acl" {
-#   depends_on = [
-#     aws_s3_bucket_ownership_controls.bucket-ownership,
-#     aws_s3_bucket_public_access_block.access-block,
-#   ]
-
-#   bucket = aws_s3_bucket.transactions-store.id
-#   acl    = "public-read-write"
-# }
-
-# resource "aws_s3_bucket_public_access_block" "transactions-store" {
-#   bucket = aws_s3_bucket.transactions-store.id
-
-#   block_public_acls   = false
-#   block_public_policy = false
-# }
-
-
-# resource "aws_iam_policy" "iam_policy" {
-
-#   name        = "aws_iam_policy_for_terraform_aws_lambda_role"
-#   description = "AWS IAM Policy for managing aws lambda role"
-#   policy      = <<EOF
-# {
-#   "Version":"2012-10-17",
-#   "Statement":[
-#     {
-#       "Sid":"AddPerm",
-#       "Effect":"Allow",
-#       "Principal": "*",
-#       "Action":["s3:GetObject"],
-#       "Resource":["arn:aws:s3:::examplebucket/*"]
-#     }
-#   ]
-# }
-# EOF
-# }
 
 # Setup API Gateway
 
@@ -248,4 +183,48 @@ resource "aws_lambda_permission" "apigw_lambda" {
   function_name = aws_lambda_function.lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "arn:aws:execute-api:${var.aws_region}:${var.aws_account_id}:${aws_api_gateway_rest_api.TransactionSummarizerAPI.id}/*/${aws_api_gateway_method.TransactionSummarizerAPI.http_method}${aws_api_gateway_resource.TransactionSummarizerAPI.path}"
+}
+
+# DB
+resource "aws_security_group" "postgres" {
+  name        = "postgres-security-group"
+  description = "Security group for Postgres database"
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 5432
+    to_port     = 5432
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    protocol    = -1
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_db_instance" "transactions-db" {
+  identifier           = "transactions-db"
+  instance_class       = "db.t3.micro"
+  allocated_storage    = 5
+  engine               = "postgres"
+  username             = "edu"
+  password             = var.db_password
+  parameter_group_name = aws_db_parameter_group.transactions-db.name
+
+  vpc_security_group_ids = [aws_security_group.postgres.id]
+  publicly_accessible    = true # Only for development and testing!
+  skip_final_snapshot    = true
+}
+
+resource "aws_db_parameter_group" "transactions-db" {
+  name   = "transactions-db"
+  family = "postgres15"
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
 }
