@@ -1,8 +1,11 @@
 #! /usr/bin/python3
+import logging
 import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from logging import Logger
 from smtplib import SMTP_SSL, SMTPException
+from typing import Optional
 
 from src.config import settings
 
@@ -12,7 +15,8 @@ class EmailGatewayError(Exception):
 
 
 class EmailGateway:
-    def __init__(self) -> None:
+    def __init__(self, logger: Optional[Logger] = None) -> None:
+        self.log = logger or logging.getLogger(__name__)
         self.smtp_server = settings.smtp_server
         self.port = settings.smtp_port
         self.email = settings.sender_email_address
@@ -35,7 +39,11 @@ class EmailGateway:
         message.attach(part2)
         with SMTP_SSL(self.smtp_server, self.port, context=self._context) as server:
             try:
+                self.log.debug("Attempting to connect to SMTP server")
                 server.login(self.email, self.password)
+                self.log.debug("Connection to SMTP server successfull")
+                self.log.debug("Attempting to send email")
                 server.sendmail(self.email, target_email, message.as_string())
+                self.log.debug("Email succesfully sent")
             except SMTPException as e:
                 raise EmailGatewayError("There was a problem sending the email") from e

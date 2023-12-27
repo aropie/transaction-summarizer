@@ -1,6 +1,8 @@
 #! /usr/bin/python3
 
 
+import logging
+
 from src.config import settings
 from src.db.db import DBClientError
 from src.email_gateway import EmailGatewayError
@@ -12,12 +14,17 @@ summarizer.send_summary_email(settings.target_email, settings.email_subject)
 
 
 def handle(event, context):
+    logger = logging.getLogger(__name__)
+    # TODO: Log level should be setup from env vars for different stages
+    logger.setLevel(logging.INFO)
     try:
         file = event["body"].split("\n")
-        seeder = TransactionSeeder()
+        seeder = TransactionSeeder(logger=logger)
         seeder.parse_file(file)
-        summarizer = TransactionSummarizer()
+        logger.info("CSV file parsed correctly")
+        summarizer = TransactionSummarizer(logger=logger)
         summarizer.send_summary_email(settings.target_email, settings.email_subject)
+        logger.info("Summary email sent successfully")
     except MalformedInputFileError as e:
         return {"statusCode": 400, "message": str(e)}
     except (DBClientError, EmailGatewayError) as e:

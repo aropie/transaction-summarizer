@@ -1,5 +1,7 @@
 #! /usr/bin/python3
+import logging
 from collections import defaultdict
+from logging import Logger
 from typing import Any, Optional
 
 from html2text import html2text
@@ -17,8 +19,9 @@ class TransactionSummarizer:
     return averages and balances.
     """
 
-    def __init__(self, db_api: Optional[DbAPI] = None):
-        self.email_gateway = EmailGateway()
+    def __init__(self, db_api: Optional[DbAPI] = None, logger: Optional[Logger] = None):
+        self.log = logger or logging.getLogger(__name__)
+        self.email_gateway = EmailGateway(logger=self.log)
         self.db = db_api or DbAPI()
 
     def get_transactions_by_year_month(self) -> Any:
