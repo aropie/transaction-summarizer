@@ -7,9 +7,21 @@ from sqlalchemy.orm import Session, sessionmaker
 from src.config import settings
 
 
+class DBClientError(Exception):
+    pass
+
+
 class DbAPI:
     def __init__(self) -> None:
-        db_url = f"{settings.db_dialect}://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+        if settings.db_dialect == "sqlite":
+            db_url_suffix = f"/{settings.DB_FILE}"
+        else:
+            db_url_suffix = (
+                f"{settings.DB_USER}:{settings.DB_PASSWORD}"
+                f"@{settings.DB_HOST}:{settings.DB_PORT}"
+                f"/{settings.DB_NAME}"
+            )
+        db_url = f"{settings.db_dialect}://{db_url_suffix}"
         self.engine = create_engine(db_url)
         self.session_factory = sessionmaker(bind=self.engine)
 
@@ -20,8 +32,8 @@ class DbAPI:
         try:
             yield session
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
-            raise
+            raise DBClientError("There was a problem connecting to the DB") from e
         finally:
             session.close()

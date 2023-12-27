@@ -1,10 +1,14 @@
 #! /usr/bin/python3
 from csv import DictReader
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
 from src.db.db import DbAPI
 from src.models import Transaction
+
+
+class MalformedInputFileError(Exception):
+    pass
 
 
 class TransactionSeeder:
@@ -21,10 +25,10 @@ class TransactionSeeder:
     def __init__(self, dbapi: Optional[DbAPI] = None):
         self.db = dbapi or DbAPI()
 
-    def parse_file(self, csvfile: str):
-        with open(csvfile) as f:
-            reader = DictReader(f)
-            for row in reader:
+    def parse_file(self, csvfile: List[str]):
+        reader = DictReader(csvfile)
+        for row in reader:
+            try:
                 split_date = [int(arg) for arg in row["date"].split("/")]
                 year, month, day = split_date
                 self._update_or_insert_transaction(
@@ -32,6 +36,8 @@ class TransactionSeeder:
                     date=date(day=day, month=month, year=year),
                     value=float(row["transaction"]),
                 )
+            except (ValueError, AttributeError, KeyError) as e:
+                raise MalformedInputFileError("The input csv file is invalid") from e
 
     def _update_or_insert_transaction(self, id: int, date: date, value: float):
         with self.db.session_local() as session:

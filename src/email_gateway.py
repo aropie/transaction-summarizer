@@ -2,9 +2,13 @@
 import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from smtplib import SMTP_SSL
+from smtplib import SMTP_SSL, SMTPException
 
 from src.config import settings
+
+
+class EmailGatewayError(Exception):
+    pass
 
 
 class EmailGateway:
@@ -30,5 +34,8 @@ class EmailGateway:
         message.attach(part1)
         message.attach(part2)
         with SMTP_SSL(self.smtp_server, self.port, context=self._context) as server:
-            server.login(self.email, self.password)
-            server.sendmail(self.email, target_email, message.as_string())
+            try:
+                server.login(self.email, self.password)
+                server.sendmail(self.email, target_email, message.as_string())
+            except SMTPException as e:
+                raise EmailGatewayError("There was a problem sending the email") from e
