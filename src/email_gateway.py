@@ -11,7 +11,7 @@ from src.config import settings
 
 
 class EmailGatewayError(Exception):
-    pass
+    ...
 
 
 class EmailGateway:

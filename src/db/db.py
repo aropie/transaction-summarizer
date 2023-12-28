@@ -8,7 +8,7 @@ from src.config import settings
 
 
 class DBClientError(Exception):
-    pass
+    ...
 
 
 class DbAPI:

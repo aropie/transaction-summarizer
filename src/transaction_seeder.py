@@ -10,7 +10,7 @@ from src.models import Transaction
 
 
 class MalformedInputFileError(Exception):
-    pass
+    ...
 
 
 class TransactionSeeder:
