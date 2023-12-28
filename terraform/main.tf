@@ -207,6 +207,7 @@ resource "aws_security_group" "postgres" {
 }
 
 resource "aws_db_instance" "transactions-db" {
+  count                = var.provision_db ? 1 : 0
   identifier           = "transactions-db"
   instance_class       = "db.t3.micro"
   allocated_storage    = 5

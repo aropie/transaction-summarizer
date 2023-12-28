@@ -8,6 +8,12 @@ variable "aws_account_id" {
   type        = string
 }
 
+variable "provision_db" {
+  description = "Whether to provision a PostgreSQL RDS instance"
+  type        = bool
+  default     = true
+}
+
 variable "db_password" {
   description = "RDS root user password"
   type        = string
