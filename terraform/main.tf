@@ -94,6 +94,7 @@ resource "aws_lambda_function" "lambda" {
   function_name    = "transaction-summarizer"
   handler          = "src.app.handle"
   runtime          = "python3.11"
+  timeout          = 300 # 5 minutes
   filename         = data.archive_file.code.output_path
   source_code_hash = data.archive_file.code.output_base64sha256
   role             = aws_iam_role.lambda_role.arn
