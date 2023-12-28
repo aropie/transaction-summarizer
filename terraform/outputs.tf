@@ -16,6 +16,12 @@ output "rds_username" {
   sensitive   = true
 }
 
+output "rds_database" {
+  description = "RDS instance database name"
+  value       = aws_db_instance.transactions-db.db_name
+  sensitive   = true
+}
+
 output "api_url" {
   description = "URL to invoke the API"
   value       = aws_api_gateway_stage.prod.invoke_url

@@ -211,7 +211,7 @@ resource "aws_db_instance" "transactions-db" {
   instance_class       = "db.t3.micro"
   allocated_storage    = 5
   engine               = "postgres"
-  username             = "edu"
+  username             = "postgres"
   password             = var.db_password
   parameter_group_name = aws_db_parameter_group.transactions-db.name
 
