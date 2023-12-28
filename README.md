@@ -32,7 +32,7 @@ Details to take into account:
   positive values are interpreted as credit transactions and negative
   values as debit transactions.
 
-## Running
+## Deploying
 The project assumes you have an already [configured AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html)
 available. First, you [should adjust the settings and variables](#configuring-settings-and-variables)
 to your preferences. To deploy the project:
@@ -51,6 +51,10 @@ You can then see the provisioned URL for your instance with
 ```bash
 terraform output api_url
 ```
+
+> If using the provisioned DB, you might need to first do the full deployment
+> in order to get the DB hostname, set the db_hostname in `.secrets.toml` and then re-deploy.
+> You can get the DB's hostname with `terraform output db_hostname`.
 
 Each time you run `terraform apply`, you will be asked for the values of the variables
 that Terraform requires in order to make the deployment. For ease of use, you can supply
@@ -80,11 +84,12 @@ don’t support 2-step verification to sign in to your Gmail Account
 [(official docs)](https://support.google.com/accounts/answer/185833?hl=en).
 
 ## Sending the transactions file
-Once terraform lets you know that everything was successfully deployed,
-you should now be able to send the [transactions file](#the-csv-transactions-file).
-The deployed Lambda will be listening at the `/upload` endpoint and the file needs
-to be sent within a `multipart/form-data` request. It does not matter the name of the file
- but it must be sent with the `file` parameter.
+Once terraform lets you know that everything was successfully
+deployed, you should now be able to send the [transactions file](#the-csv-transactions-file).
+The deployed Lambda will be listening for a POST at the `/upload`
+endpoint and the file needs to be sent within a `multipart/form-data`
+request. It does not matter the name of the file but it must be sent
+with the `file` parameter.
 
 An example of a request with curl:
 ```bash
@@ -119,6 +124,8 @@ different `date` or `value`; the transaction with that `id` will
 always be updated to the last known value.
 
 ## Future development
-- Local development.
+- Get the target email as a parameter of the request.
+- Add authentication
+- Build a CLI to run the project locally.
 - Support for multiple accounts.
 - Boolean flag to configure if the summary email should be sent or just process the transactions file.
