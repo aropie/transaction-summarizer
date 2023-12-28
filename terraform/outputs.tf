@@ -15,3 +15,8 @@ output "rds_username" {
   value       = aws_db_instance.transactions-db.username
   sensitive   = true
 }
+
+output "api_url" {
+  description = "URL to invoke the API"
+  value       = aws_api_gateway_stage.prod.invoke_url
+}
