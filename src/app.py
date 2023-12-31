@@ -1,6 +1,8 @@
 #! /usr/bin/python3
 import logging
 import re
+import sys
+from argparse import ArgumentParser, FileType
 
 from requests_toolbelt.multipart import decoder
 
@@ -19,6 +21,16 @@ BAD_REQUEST_MESSAGE = (
     "A csv file needs to be sent. The request needs to be "
     "of multipart/form-data content type."
 )
+
+
+def _run_process(file, logger):
+    seeder = TransactionSeeder(logger=logger)
+    seeder.parse_file(file)
+    logger.info("CSV file parsed correctly")
+
+    summarizer = TransactionSummarizer(logger=logger)
+    summarizer.send_summary_email(settings.target_email, settings.email_subject)
+    logger.info("Summary email sent successfully")
 
 
 def handle(event, context):
@@ -66,13 +78,7 @@ def handle(event, context):
             raise BadRequestError(BAD_REQUEST_MESSAGE)
 
         file = file.split("\n")
-        seeder = TransactionSeeder(logger=logger)
-        seeder.parse_file(file)
-        logger.info("CSV file parsed correctly")
-
-        summarizer = TransactionSummarizer(logger=logger)
-        summarizer.send_summary_email(settings.target_email, settings.email_subject)
-        logger.info("Summary email sent successfully")
+        _run_process(file, logger)
 
     except (BadRequestError, MalformedInputFileError) as e:
         logger.error(str(e))
@@ -91,3 +97,20 @@ def handle(event, context):
         body = "Input processed successfully"
     finally:
         return {"statusCode": status_code, "body": body}
+
+
+def cli():
+    parser = ArgumentParser()
+    parser.add_argument("filename", type=FileType("r", encoding="utf-8"))
+    args = parser.parse_args()
+
+    logger = logging.getLogger(__name__)
+    # TODO: Log level should be setup from env vars for different stages
+    logger.setLevel(logging.INFO)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+
+    _run_process(args.filename.readlines(), logger)
+
+
+if __name__ == "__main__":
+    cli()
